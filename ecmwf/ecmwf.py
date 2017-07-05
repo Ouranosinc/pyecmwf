@@ -9,7 +9,7 @@ defi4 = netCDF4.default_fillvals['i4']
 deff4 = netCDF4.default_fillvals['f4']
 
 
-def fixed_netcdf(path_constant_field, output_file, var_name,
+def fixed_netcdf(path_constant_field, output_file, var_name, title, reference,
                  ecmwf_var_dict=None):
     """ECMWF invariant NetCDF.
 
@@ -19,6 +19,7 @@ def fixed_netcdf(path_constant_field, output_file, var_name,
         This is a file obtained through a Retrieve NetCDF request on MARS.
     output_file : str
     var_name : str
+    title : str
     ecmwf_var_dict : dict
         Dictionary containing the following keys:
         'ecmwf_name', 'ecmwf_tag': '129.128', 'standard_name', 'type',
@@ -43,13 +44,12 @@ def fixed_netcdf(path_constant_field, output_file, var_name,
     nc1.Conventions = 'CF-1.6'
 
     # 2.6.2. Description of file contents
-    nc1.title = ('ERA-Interim')
+    nc1.title = title
     nc1.history = "{0}: Extract variable.\n{1}".format(
         now, nc_reference.history)
     nc1.institution = 'ECMWF'
     nc1.source = 'Reanalysis'
-    nc1.references = ('https://www.ecmwf.int/en/research/climate-reanalysis/'
-                      'era-interim')
+    nc1.references = reference
 
     # Create netCDF dimensions
     nc1.createDimension('lat', len(nc_reference.dimensions['latitude']))
@@ -87,8 +87,8 @@ def fixed_netcdf(path_constant_field, output_file, var_name,
     var1 = nc1.createVariable(var_name, 'f4', ('lat', 'lon'), zlib=True,
                               fill_value=deff4)
     # 3.1. Units
-    if var_ref.units == '(0 - 1)':
-        var1.units = '1'
+    if 'units' in ecmwf_var_dict:
+        var1.units = ecmwf_var_dict['units']
     else:
         var1.units = var_ref.units.replace('*','')
     # 3.2. Long Name
@@ -96,7 +96,12 @@ def fixed_netcdf(path_constant_field, output_file, var_name,
     # 3.3. Standard Name
     var1.standard_name = ecmwf_var_dict['standard_name']
     var_ref = nc_reference.variables[ecmwf_var_dict['ecmwf_name']]
-    var1[:,:] = var_ref[0,:,:]
+    ref_data = var_ref[0,:,:]
+    if 'scale_factor' in ecmwf_var_dict:
+        ref_data = ref_data * ecmwf_var_dict['scale_factor']
+    if 'add_offset' in ecmwf_var_dict
+        ref_data = ref_data + ecmwf_var_dict['add_offset']
+    var1[:,:] = ref_data
 
     nc_reference.close()
     nc1.close()
