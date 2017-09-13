@@ -9,6 +9,10 @@ from ecmwfapi import ECMWFDataServer
 import ecmwf_variables
 import ecmwf_datasets
 
+# Version, should be move to an __init__.py file if ever creating
+# a package out of this...
+__version__ = '0.1.1'
+
 cell_methods_windows = ['sum', 'maximum', 'median', 'mid_range', 'minimum',
                         'mean', 'mode', 'standard_deviation', 'variance']
 
@@ -47,7 +51,7 @@ def _ecmwf_create_time_dim(nc1, nc_reference, ecmwf_var_dict):
     if nc_reference.dimensions['time'].size != 1:
         nc1.createDimension('time', nc_reference.dimensions['time'].size)
         if 'cell_methods' in ecmwf_var_dict:
-            if ecmwf_var_dict['cell_methods'] in cell_methods_windows:
+            if ecmwf_var_dict['cell_methods'] != 'time: point':
                 nc1.createDimension('nv', 2)
 
 
@@ -87,10 +91,6 @@ def _ecmwf_fill_time(nc1, nc_reference, ecmwf_var_dict):
         time[:] = new_times
     else:
         time[:] = new_times - (dt / 2.0)
-    #if ecmwf_var_dict['type'] == 'fc':
-    #    time[:] = new_times - (dt / 2.0)
-    #elif ecmwf_var_dict['type'] == 'an':
-    #    time[:] = new_times
 
     if 'time_bnds' in nc1.variables:
         time_bnds = nc1.variables['time_bnds']
@@ -139,8 +139,7 @@ def _ecmwf_fill_var(var1, var_ref, ecmwf_var_dict):
         ref_data = ref_data * ecmwf_var_dict['scale_factor']
     if 'add_offset' in ecmwf_var_dict:
         ref_data = ref_data + ecmwf_var_dict['add_offset']
-    if ('force_positive' in ecmwf_var_dict) and \
-       ecmwf_var_dict['force_positive']:
+    if ecmwf_var_dict.get('force_positive', False):
         indices = np.where(ref_data < 0.0)
         ref_data[indices] = 0.0
     var1[:,:,:] = ref_data
@@ -176,10 +175,11 @@ def ecmwf_cf_netcdf(input_file, output_file, var_name, title, source,
     creation_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     nc1 = netCDF4.Dataset(output_file, 'w', format='NETCDF4_CLASSIC')
 
-    nc1.Conventions = 'CF-1.6'
+    nc1.Conventions = 'CF-1.7'
     nc1.title = title
-    nc1.history = "{0}\n{1} Extract variable (pyecmwf).".format(
-        nc_reference.history, creation_time)
+    nc1.history = ("{0}\n{1} (pyecmwf-{2}): "
+                   "Reformat to CF-1.7.").format(
+        nc_reference.history, creation_time, __version__)
     nc1.institution = 'ECMWF'
     nc1.source = source
     nc1.experiment = experiment_name(ecmwf_var_dict)
@@ -247,9 +247,11 @@ def download_by_year(mars_request, path_output, initial_year, final_year):
         server.retrieve(d)
     return output_files
 
+
 def download_and_convert_by_year(dataset, var_name, path_output, initial_year,
                                  final_year, title, source, experiment=None,
-                                 ecmwf_var_dict=None, path_download=None):
+                                 ecmwf_var_dict=None, path_download=None,
+                                 delete_mars_files=True):
     ecmwf_var_dict = fetch_ecmwf_var_dict(ecmwf_var_dict, var_name, experiment)
 
     if path_download is None:
@@ -270,7 +272,7 @@ def download_and_convert_by_year(dataset, var_name, path_output, initial_year,
         experiment_name = 'analysis'
     mars_request['type'] = ecmwf_var_dict['type']
     mars_request['format'] = 'netcdf'
-    
+
     for yyyy in range(initial_year, final_year + 1):
         output_files = download_by_year(
             mars_request, path_download, yyyy, yyyy)
@@ -278,4 +280,5 @@ def download_and_convert_by_year(dataset, var_name, path_output, initial_year,
             var_name, time_frequency, dataset, experiment_name, str(yyyy))
         ecmwf_cf_netcdf(output_files[0], os.path.join(path_output, file_name),
                         var_name, title, source, experiment, ecmwf_var_dict)
-        os.remove(output_files[0])
+        if delete_mars_files:
+            os.remove(output_files[0])

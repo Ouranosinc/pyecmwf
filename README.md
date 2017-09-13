@@ -21,8 +21,11 @@ http://apps.ecmwf.int/datasets/, select the variable, click on
 variables that are available as analysis and/or forecast can be identified.
 Forecast have "step": "3/6/9/12" & "time": "00:00:00/12:00:00" & "type": "fc".
 Analysis have "step": "0" & "time": "00:00:00/06:00:00/12:00:00/18:00:00" &
-"type": "an".
+"type": "an". Additional information on the variables can be found at
+http://apps.ecmwf.int/codes/grib/param-db
 
 ## Limitations
 
 - Only tested with ERA-Interim.
+- The information on level for 2 m surface variable is lost/not implemented.
+- Downloaded files do not use temp dirs, possible conflict in multi-requests
