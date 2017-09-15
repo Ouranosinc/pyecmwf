@@ -16,6 +16,7 @@
 #     force_positive : True or False, optional
 #     units : str, replace the units in the original file, optional
 #     least_significant_digit : int, used to reduce size of data, optional
+#     force_height : float, vertical coord (height above ground), optional
 
 ecmwf_vars = {
     'phis': {
@@ -65,18 +66,22 @@ ecmwf_vars_forecast = {
         'ecmwf_tag': '167.128',
         'standard_name': 'air_temperature',
         'type': 'fc',
-        'levtype': 'sfc'},
+        'levtype': 'sfc',
+        'least_significant_digit': 3,
+        'force_height': 2.0},
     'uas': {
         'ecmwf_tag': '165.128',
         'standard_name': 'eastward_wind',
         'type': 'fc',
         'levtype': 'sfc',
-        'least_significant_digit': 3},
+        'least_significant_digit': 3,
+        'force_height': 10.0},
     'vas': {
         'ecmwf_tag': '166.128',
         'standard_name': 'northward_wind',
         'type': 'fc',
         'levtype': 'sfc',
-        'least_significant_digit': 3}}
+        'least_significant_digit': 3,
+        'force_height': 10.0}}
 
 ecmwf_vars_analysis = {}

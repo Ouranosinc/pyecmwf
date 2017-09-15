@@ -11,7 +11,7 @@ import ecmwf_datasets
 
 # Version, should be move to an __init__.py file if ever creating
 # a package out of this...
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 cell_methods_windows = ['sum', 'maximum', 'median', 'mid_range', 'minimum',
                         'mean', 'mode', 'standard_deviation', 'variance']
@@ -172,7 +172,7 @@ def ecmwf_cf_netcdf(input_file, output_file, var_name, title, source,
     ecmwf_var_dict = fetch_ecmwf_var_dict(ecmwf_var_dict, var_name, experiment)
     ecmwf_var_name = guess_main_variable(nc_reference)
 
-    creation_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    creation_time = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     nc1 = netCDF4.Dataset(output_file, 'w', format='NETCDF4_CLASSIC')
 
     nc1.Conventions = 'CF-1.7'
@@ -194,7 +194,15 @@ def ecmwf_cf_netcdf(input_file, output_file, var_name, title, source,
     _ecmwf_create_time(nc1)
     _ecmwf_fill_time(nc1, nc_reference, ecmwf_var_dict)
 
-    if 'level' in nc1.dimensions:
+    if 'force_height' in ecmwf_var_dict:
+        level = nc1.createVariable('height', 'f4', tuple())
+        level.axis = 'Z'
+        level.units = 'm'
+        level.positive = 'up'
+        level.long_name = 'height'
+        level.standard_name = 'height'
+        level[0] = ecmwf_var_dict['force_height']
+    elif 'level' in nc1.dimensions:
         raise NotImplementedError()
         # Here we will have to take into account that there are multiple
         # level type supported by ECMWF
