@@ -8,8 +8,9 @@ https://software.ecmwf.int/wiki/display/WEBAPI/Access+ECMWF+Public+Datasets
 Step 1: Copy the key (see documentation) to $HOME/.ecmwfapirc
 
 Step 2: Download client, then for local install:
-export PYTHONPATH=/home/username/lib/python2.7/site-packages
-python setup.py install --prefix=/home/username
+
+    $ export PYTHONPATH=/home/username/lib/python2.7/site-packages
+    $ python setup.py install --prefix=/home/username
 
 ## Usage
 
